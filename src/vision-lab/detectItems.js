@@ -8,7 +8,10 @@
 import { loadDetector } from './loadDetector.js';
 
 /** Minimum confidence score to keep a detection (0–1). */
-export const MIN_CONFIDENCE = 0.5;
+export const MIN_CONFIDENCE = 0.35;
+
+/** Threshold below which a detection is flagged as low confidence. */
+export const LOW_SCORE_THRESHOLD = 0.5;
 
 /**
  * Run object detection on an image/video/canvas element.
@@ -26,7 +29,7 @@ export async function detectItems(imageElement) {
   const model = await loadDetector();
   const predictions = await model.detect(imageElement);
 
-  // Filter by confidence threshold and normalize the shape
+  // Filter by confidence threshold (>= 0.35) and normalize the shape
   return predictions
     .filter((p) => p.score >= MIN_CONFIDENCE)
     .map((p) => ({

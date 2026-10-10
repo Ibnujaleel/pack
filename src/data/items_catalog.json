@@ -54,7 +54,7 @@
     "weight": 1.80,
     "tier": 3,
     "elasticity": 0,
-    "tags": [],
+    "tags": ["fragile", "electronics"],
     "geometry": "slab",
     "color": "#475569",
     "animation": "gentle_glide"
@@ -66,9 +66,45 @@
     "weight": 0.40,
     "tier": 3,
     "elasticity": 0,
-    "tags": [],
+    "tags": ["liquid", "tsa"],
     "geometry": "box",
     "color": "#f59e0b",
     "animation": "gentle_glide"
+  },
+  {
+    "type": "cell_phone",
+    "name": "Cell phone",
+    "dimensions": [8, 16, 1],
+    "weight": 0.20,
+    "tier": 3,
+    "elasticity": 0,
+    "tags": ["fragile", "electronics"],
+    "geometry": "slab",
+    "color": "#06b6d4",
+    "animation": "gentle_glide"
+  },
+  {
+    "type": "phone_charger",
+    "name": "Phone charger",
+    "dimensions": [6, 5, 4],
+    "weight": 0.12,
+    "tier": 2,
+    "elasticity": 0,
+    "tags": ["electronics"],
+    "geometry": "box",
+    "color": "#e5e7eb",
+    "animation": "soft_settle"
+  },
+  {
+    "type": "charging_cable",
+    "name": "Charging cable (coiled)",
+    "dimensions": [12, 12, 3],
+    "weight": 0.08,
+    "tier": 2,
+    "elasticity": 0.7,
+    "tags": [],
+    "geometry": "cylinder",
+    "color": "#14b8a6",
+    "animation": "soft_settle"
   }
 ]

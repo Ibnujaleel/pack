@@ -16,6 +16,9 @@ const ITEM_ICONS = {
   folded_denim: '👖',
   laptop_15: '💻',
   tsa_liquid_pouch: '🧴',
+  cell_phone: '📱',
+  phone_charger: '🔌',
+  charging_cable: '➰',
 };
 
 /**
@@ -72,6 +75,7 @@ export default function VisionLab() {
   const [builtRequestJson, setBuiltRequestJson] = useState(null);
   const [skippedCount, setSkippedCount] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [ignoredDetections, setIgnoredDetections] = useState([]);
 
   // Stable ID tracker instance across user interactions in the session
   const idTrackerRef = useRef(new ItemIdTracker());
@@ -84,6 +88,7 @@ export default function VisionLab() {
     if (!file) return;
 
     setDetections([]);
+    setIgnoredDetections([]);
     setError(null);
     setHasRun(false);
 
@@ -147,6 +152,7 @@ export default function VisionLab() {
 
       // Convert raw detections to normalized suggestions
       const suggestions = normalizeDetections(results);
+      setIgnoredDetections(suggestions.ignored || []);
 
       // Create review items for Phase 2
       const newItems = suggestions.map((sug) => {
@@ -614,6 +620,22 @@ export default function VisionLab() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* ── Ignored Background Objects ──────────────── */}
+        {ignoredDetections.length > 0 && (
+          <details className="vl-ignored-details">
+            <summary className="vl-ignored-summary">
+              <span>🙈 Ignored background objects ({ignoredDetections.length})</span>
+            </summary>
+            <div className="vl-ignored-content">
+              {ignoredDetections.map((ig, idx) => (
+                <span key={idx} className="vl-ignored-pill">
+                  {ig.detectedClass} ({(ig.score * 100).toFixed(0)}%)
+                </span>
+              ))}
+            </div>
+          </details>
         )}
 
         {/* ── Build Request JSON Action ────────────────── */}

@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "id": "sneakers-1",
+      "type": "sneakers",
+      "overrides": {}
+    },
+    {
+      "id": "sneakers-2",
+      "type": "sneakers",
+      "overrides": {}
+    },
+    {
+      "id": "sneakers-3",
+      "type": "sneakers",
+      "overrides": {}
+    },
+    {
+      "id": "sneakers-4",
+      "type": "sneakers",
+      "overrides": {}
+    }
+  ]
+}

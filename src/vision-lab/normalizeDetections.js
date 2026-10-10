@@ -7,7 +7,8 @@
  * Pure functions only. Does not mutate inputs.
  */
 
-import { lookupClass } from './classMap.js';
+import { lookupClass, isIgnoredClass } from './classMap.js';
+import { LOW_SCORE_THRESHOLD } from './detectItems.js';
 
 /** IoU threshold above which two same-class boxes are considered duplicates. */
 export const IOU_MERGE_THRESHOLD = 0.6;
@@ -49,6 +50,10 @@ export function computeIoU(a, b) {
  * @returns {Array<{ class: string, score: number, bbox: number[] }>}
  */
 export function mergeDuplicates(detections) {
+  if (!Array.isArray(detections) || detections.length === 0) {
+    return [];
+  }
+
   const kept = [];
 
   for (const det of detections) {
@@ -79,13 +84,11 @@ export function mergeDuplicates(detections) {
 /**
  * Normalize raw COCO-SSD detections into catalog-based suggestions.
  *
- * Each suggestion has:
- *   - suggestionId: unique string identifier
- *   - detectedClass: original COCO-SSD class name
- *   - score: detection confidence (0–1)
- *   - bbox: [x, y, width, height] in pixels
- *   - suggestedType: catalog type ID or null if no mapping
- *   - matchConfidence: "high" | "low" | "none"
+ * - Deduplicates boxes with IoU > 0.6.
+ * - Filters out background IGNORED_CLASSES into a separate `ignored` list.
+ * - Maps supported classes to catalog type IDs.
+ * - Demotes detections with score < LOW_SCORE_THRESHOLD (0.5) to `matchConfidence: "low"`.
+ * - Unmapped classes get `suggestedType: null, matchConfidence: "none"`.
  *
  * @param {Array<{ class: string, score: number, bbox: number[] }>} rawDetections
  * @returns {Array<{
@@ -95,17 +98,50 @@ export function mergeDuplicates(detections) {
  *   bbox: number[],
  *   suggestedType: string | null,
  *   matchConfidence: "high" | "low" | "none"
- * }>}
+ * }> & { ignored: Array<{ detectedClass: string, score: number, bbox: number[] }> }}
  */
 export function normalizeDetections(rawDetections) {
   if (!rawDetections || rawDetections.length === 0) {
-    return [];
+    const emptyResult = [];
+    Object.defineProperty(emptyResult, 'ignored', {
+      value: [],
+      enumerable: false,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(emptyResult, 'suggestions', {
+      value: emptyResult,
+      enumerable: false,
+      writable: true,
+      configurable: true,
+    });
+    return emptyResult;
   }
 
   const merged = mergeDuplicates(rawDetections);
+  const keptDetections = [];
+  const ignoredDetections = [];
 
-  return merged.map((det) => {
+  for (const det of merged) {
+    if (isIgnoredClass(det.class)) {
+      ignoredDetections.push({
+        detectedClass: det.class,
+        score: det.score,
+        bbox: [...det.bbox],
+      });
+    } else {
+      keptDetections.push(det);
+    }
+  }
+
+  const suggestions = keptDetections.map((det) => {
     const mapping = lookupClass(det.class);
+
+    let matchConfidence = 'none';
+    if (mapping) {
+      // Detections between 0.35 and 0.5 are kept but marked matchConfidence "low"
+      matchConfidence = det.score < LOW_SCORE_THRESHOLD ? 'low' : mapping.matchConfidence;
+    }
 
     return {
       suggestionId: `suggestion-${nextSuggestionId++}`,
@@ -113,9 +149,25 @@ export function normalizeDetections(rawDetections) {
       score: det.score,
       bbox: [...det.bbox], // shallow copy to avoid mutating input
       suggestedType: mapping ? mapping.catalogType : null,
-      matchConfidence: mapping ? mapping.matchConfidence : 'none',
+      matchConfidence,
     };
   });
+
+  Object.defineProperty(suggestions, 'ignored', {
+    value: ignoredDetections,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+
+  Object.defineProperty(suggestions, 'suggestions', {
+    value: suggestions,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+
+  return suggestions;
 }
 
 /**

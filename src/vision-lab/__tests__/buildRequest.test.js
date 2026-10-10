@@ -16,6 +16,9 @@ describe('buildRequest', () => {
       expect(formatTypePrefix('folded_denim')).toBe('folded-denim');
       expect(formatTypePrefix('sneakers')).toBe('sneakers');
       expect(formatTypePrefix('tsa_liquid_pouch')).toBe('tsa-liquid-pouch');
+      expect(formatTypePrefix('cell_phone')).toBe('cell-phone');
+      expect(formatTypePrefix('phone_charger')).toBe('phone-charger');
+      expect(formatTypePrefix('charging_cable')).toBe('charging-cable');
     });
 
     it('generates instance IDs with type prefix and 1-based index', () => {
@@ -23,6 +26,9 @@ describe('buildRequest', () => {
       expect(generateInstanceId('laptop_15', 1)).toBe('laptop-1');
       expect(generateInstanceId('hardcover_book', 2)).toBe('hardcover-book-2');
       expect(generateInstanceId('tsa_liquid_pouch', 1)).toBe('tsa-liquid-pouch-1');
+      expect(generateInstanceId('cell_phone', 1)).toBe('cell-phone-1');
+      expect(generateInstanceId('phone_charger', 1)).toBe('phone-charger-1');
+      expect(generateInstanceId('charging_cable', 1)).toBe('charging-cable-1');
     });
   });
 

@@ -841,6 +841,47 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Ignored background objects ──────────────────────── */
+.vl-ignored-details {
+  background: var(--vl-surface-2);
+  border: 1px solid var(--vl-border);
+  border-radius: var(--vl-radius-sm);
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--vl-text-muted);
+}
+
+.vl-ignored-summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vl-ignored-summary:hover {
+  color: var(--vl-text);
+}
+
+.vl-ignored-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--vl-border);
+}
+
+.vl-ignored-pill {
+  background: var(--vl-surface-3);
+  border: 1px solid var(--vl-border);
+  border-radius: 4px;
+  padding: 0.2em 0.55em;
+  font-size: 0.78rem;
+  color: var(--vl-text-muted);
+}
+
 /* ── Responsive ───────────────────────────────────────── */
 @media (max-width: 768px) {
   .vl-root {

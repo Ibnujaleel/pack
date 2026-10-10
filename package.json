@@ -8,6 +8,7 @@
     "build": "vite build",
     "test": "vitest run",
     "lint": "oxlint",
+    "fixtures": "node scripts/generateFixtures.js",
     "preview": "vite preview"
   },
   "dependencies": {
