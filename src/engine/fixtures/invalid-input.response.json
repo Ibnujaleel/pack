@@ -1,0 +1,5 @@
+{
+  "status": "error",
+  "code": "INVALID_INPUT",
+  "message": "Item \"banana-1\" at index 0 has unknown type \"banana\". Must be a valid catalog type."
+}

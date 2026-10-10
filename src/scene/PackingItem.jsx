@@ -44,6 +44,15 @@ function SneakersModel({ dimensions = [20, 28, 12] }) {
     const targetD = (dimensions[1] || 28) / 100;
     const targetH = (dimensions[2] || 12) / 100;
 
+    // Check if oriented dimensions swap the aspect ratio relative to model's natural orientation (size.x < size.z)
+    const isSwapped = (targetW > targetD) !== (size.x > size.z);
+    if (isSwapped) {
+      clone.rotation.y = Math.PI / 2;
+      box.setFromObject(clone);
+      box.getSize(size);
+      box.getCenter(center);
+    }
+
     // Uniform base scale factor to fit within catalog dimensions
     const baseScale = Math.min(
       targetW / (size.x || 1),
@@ -58,9 +67,9 @@ function SneakersModel({ dimensions = [20, 28, 12] }) {
     const scaledHeight = size.y * scaleFactor;
     const yFloorAdjustment = -(targetH - scaledHeight) / 2;
 
-    clone.position.x = -center.x;
-    clone.position.y = -center.y + yFloorAdjustment / scaleFactor;
-    clone.position.z = -center.z;
+    clone.position.x = -center.x * scaleFactor;
+    clone.position.y = -center.y * scaleFactor + yFloorAdjustment;
+    clone.position.z = -center.z * scaleFactor;
 
     const wrapper = new THREE.Group();
     clone.scale.setScalar(scaleFactor);
@@ -79,10 +88,10 @@ useGLTF.preload('/sneaker.glb');
  * 2. HARDCOVER BOOK MODEL (W: 0.16m, D: 0.24m, H: 0.06m)
  * Renders a hardcover book with spine, paper block, and bookmark ribbon.
  */
-function HardcoverBookModel({ color = '#8b5cf6' }) {
-  const W = 0.16;
-  const D = 0.24;
-  const H = 0.06;
+function HardcoverBookModel({ dimensions, color = '#8b5cf6' }) {
+  const W = (dimensions?.[0] || 16) / 100;
+  const D = (dimensions?.[1] || 24) / 100;
+  const H = (dimensions?.[2] || 6) / 100;
   const coverThick = 0.004;
 
   return (
@@ -130,9 +139,12 @@ function HardcoverBookModel({ color = '#8b5cf6' }) {
  * 3. ROLLED T-SHIRT MODEL (W: 0.18m, D: 0.18m, H: 0.10m)
  * Renders a cylindrical fabric roll with concentric roll swirl detail.
  */
-function RolledTshirtModel({ color = '#22c55e' }) {
-  const radius = 0.049; // diameter 0.098m <= 0.10m H
-  const length = 0.175; // <= 0.18m W/D
+function RolledTshirtModel({ dimensions, color = '#22c55e' }) {
+  const W = (dimensions?.[0] || 18) / 100;
+  const D = (dimensions?.[1] || 18) / 100;
+  const H = (dimensions?.[2] || 10) / 100;
+  const length = W * 0.97;
+  const radius = Math.min(D, H) / 2 * 0.98;
 
   return (
     <group position={[0, 0, 0]}>
@@ -169,10 +181,10 @@ function RolledTshirtModel({ color = '#22c55e' }) {
  * 4. FOLDED DENIM MODEL (W: 0.22m, D: 0.30m, H: 0.08m)
  * Renders folded jeans with seams, creases, and gold topstitching.
  */
-function FoldedDenimModel({ color = '#3b82f6' }) {
-  const W = 0.22;
-  const D = 0.30;
-  const H = 0.08;
+function FoldedDenimModel({ dimensions, color = '#3b82f6' }) {
+  const W = (dimensions?.[0] || 22) / 100;
+  const D = (dimensions?.[1] || 30) / 100;
+  const H = (dimensions?.[2] || 8) / 100;
 
   return (
     <group position={[0, 0, 0]}>
@@ -217,10 +229,10 @@ function FoldedDenimModel({ color = '#3b82f6' }) {
  * 5. 15-INCH LAPTOP MODEL (W: 0.35m, D: 0.24m, H: 0.02m)
  * Renders an ultra-sleek anodized aluminum unibody closed laptop.
  */
-function Laptop15Model({ color = '#475569' }) {
-  const W = 0.35;
-  const D = 0.24;
-  const H = 0.02;
+function Laptop15Model({ dimensions, color = '#475569' }) {
+  const W = (dimensions?.[0] || 35) / 100;
+  const D = (dimensions?.[1] || 24) / 100;
+  const H = (dimensions?.[2] || 2) / 100;
 
   return (
     <group position={[0, 0, 0]}>
@@ -269,10 +281,10 @@ function Laptop15Model({ color = '#475569' }) {
  * 6. TSA LIQUID POUCH MODEL (W: 0.15m, D: 0.10m, H: 0.05m)
  * Renders a clear translucent zip bag with travel bottles inside.
  */
-function TsaLiquidPouchModel({ color = '#f59e0b' }) {
-  const W = 0.15;
-  const D = 0.10;
-  const H = 0.05;
+function TsaLiquidPouchModel({ dimensions, color = '#f59e0b' }) {
+  const W = (dimensions?.[0] || 15) / 100;
+  const D = (dimensions?.[1] || 10) / 100;
+  const H = (dimensions?.[2] || 5) / 100;
 
   return (
     <group position={[0, 0, 0]}>
@@ -360,15 +372,15 @@ export default function PackingItem({ type, color, dimensions = [10, 10, 10], po
       case 'sneakers':
         return <SneakersModel dimensions={dimensions} />;
       case 'hardcover_book':
-        return <HardcoverBookModel color={color || '#8b5cf6'} />;
+        return <HardcoverBookModel dimensions={dimensions} color={color || '#8b5cf6'} />;
       case 'rolled_tshirt':
-        return <RolledTshirtModel color={color || '#22c55e'} />;
+        return <RolledTshirtModel dimensions={dimensions} color={color || '#22c55e'} />;
       case 'folded_denim':
-        return <FoldedDenimModel color={color || '#3b82f6'} />;
+        return <FoldedDenimModel dimensions={dimensions} color={color || '#3b82f6'} />;
       case 'laptop_15':
-        return <Laptop15Model color={color || '#475569'} />;
+        return <Laptop15Model dimensions={dimensions} color={color || '#475569'} />;
       case 'tsa_liquid_pouch':
-        return <TsaLiquidPouchModel color={color || '#f59e0b'} />;
+        return <TsaLiquidPouchModel dimensions={dimensions} color={color || '#f59e0b'} />;
       default:
         return (
           <mesh castShadow receiveShadow>

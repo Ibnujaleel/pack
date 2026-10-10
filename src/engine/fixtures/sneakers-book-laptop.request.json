@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "sneakers-1",
+      "type": "sneakers",
+      "overrides": {}
+    },
+    {
+      "id": "hardcover-book-1",
+      "type": "hardcover_book",
+      "overrides": {}
+    },
+    {
+      "id": "laptop-1",
+      "type": "laptop_15",
+      "overrides": {}
+    }
+  ]
+}

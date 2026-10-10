@@ -1,0 +1,9 @@
+{
+  "items": [
+    {
+      "id": "banana-1",
+      "type": "banana",
+      "overrides": {}
+    }
+  ]
+}

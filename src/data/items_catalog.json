@@ -6,22 +6,22 @@
     "weight": 0.85,
     "tier": 1,
     "elasticity": 0,
+    "tags": [],
     "geometry": "rounded box",
     "color": "#ea580c",
-    "animation": "heavy_thud",
-    "tags": ["footwear", "rigid"]
+    "animation": "heavy_thud"
   },
   {
     "type": "hardcover_book",
-    "name": "Hardcover Book",
+    "name": "Hardcover book",
     "dimensions": [16, 24, 6],
     "weight": 0.60,
     "tier": 1,
     "elasticity": 0,
+    "tags": [],
     "geometry": "box",
     "color": "#8b5cf6",
-    "animation": "heavy_thud",
-    "tags": ["media", "rigid"]
+    "animation": "heavy_thud"
   },
   {
     "type": "rolled_tshirt",
@@ -30,45 +30,81 @@
     "weight": 0.20,
     "tier": 2,
     "elasticity": 0.6,
+    "tags": [],
     "geometry": "cylinder",
     "color": "#22c55e",
-    "animation": "soft_settle",
-    "tags": ["clothing", "compressible"]
+    "animation": "soft_settle"
   },
   {
     "type": "folded_denim",
-    "name": "Folded Denim",
+    "name": "Folded denim",
     "dimensions": [22, 30, 8],
     "weight": 0.65,
     "tier": 2,
     "elasticity": 0.4,
+    "tags": [],
     "geometry": "box",
     "color": "#3b82f6",
-    "animation": "soft_settle",
-    "tags": ["clothing", "compressible"]
+    "animation": "soft_settle"
   },
   {
     "type": "laptop_15",
-    "name": "15-inch Laptop",
+    "name": "15-inch laptop",
     "dimensions": [35, 24, 2],
     "weight": 1.80,
     "tier": 3,
     "elasticity": 0,
+    "tags": ["fragile", "electronics"],
     "geometry": "slab",
     "color": "#475569",
-    "animation": "gentle_glide",
-    "tags": ["electronics", "fragile"]
+    "animation": "gentle_glide"
   },
   {
     "type": "tsa_liquid_pouch",
-    "name": "TSA Liquid Pouch",
+    "name": "TSA liquid pouch",
     "dimensions": [15, 10, 5],
     "weight": 0.40,
     "tier": 3,
     "elasticity": 0,
+    "tags": ["liquid", "tsa"],
     "geometry": "box",
     "color": "#f59e0b",
-    "animation": "gentle_glide",
-    "tags": ["liquid", "fragile"]
+    "animation": "gentle_glide"
+  },
+  {
+    "type": "cell_phone",
+    "name": "Cell phone",
+    "dimensions": [8, 16, 1],
+    "weight": 0.20,
+    "tier": 3,
+    "elasticity": 0,
+    "tags": ["fragile", "electronics"],
+    "geometry": "slab",
+    "color": "#06b6d4",
+    "animation": "gentle_glide"
+  },
+  {
+    "type": "phone_charger",
+    "name": "Phone charger",
+    "dimensions": [6, 5, 4],
+    "weight": 0.12,
+    "tier": 2,
+    "elasticity": 0,
+    "tags": ["electronics"],
+    "geometry": "box",
+    "color": "#e5e7eb",
+    "animation": "soft_settle"
+  },
+  {
+    "type": "charging_cable",
+    "name": "Charging cable (coiled)",
+    "dimensions": [12, 12, 3],
+    "weight": 0.08,
+    "tier": 2,
+    "elasticity": 0.7,
+    "tags": [],
+    "geometry": "cylinder",
+    "color": "#14b8a6",
+    "animation": "soft_settle"
   }
 ]

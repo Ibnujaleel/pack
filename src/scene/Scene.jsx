@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import Suitcase from './Suitcase';
 import PackingItem from './PackingItem';
 import catalogData from '../data/items_catalog.json';
-import { Eye, Layers, RotateCcw, Box, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Layers, RotateCcw, Box, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getStagingPosition, convertEngineToThree, calculateItemTransform } from './animationSequence.js';
 
 /**
  * Preview offsets for the 6 canonical models to inspect them inside/above the suitcase
@@ -18,12 +19,110 @@ const CANONICAL_SHOWCASE_LAYOUT = [
   { type: 'tsa_liquid_pouch', position: [0, 0.24, 0.15], label: 'TSA Pouch' },
 ];
 
-export default function Scene({ items = [] }) {
-  // Mode: 'showcase' (inspect all 6 canonical models) vs 'selected' (inspect user's added items)
-  const [viewMode, setViewMode] = useState('showcase');
+/**
+ * AnimatedPackingItem Component
+ * Animates a placed item from its initial staging platform slot to its exact engine-assigned destination.
+ */
+function AnimatedPackingItem({
+  placedItem,
+  itemIndex,
+  totalItems,
+  stagingPosition,
+  targetPosition,
+  targetRotation,
+  color,
+  animationTrigger,
+  onAnimationComplete,
+}) {
+  const groupRef = useRef();
+  const startTimeRef = useRef(null);
+  const isFinishedRef = useRef(animationTrigger === 0);
+
+  React.useEffect(() => {
+    startTimeRef.current = null;
+    isFinishedRef.current = false;
+  }, [animationTrigger]);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+
+    if (isFinishedRef.current) {
+      groupRef.current.position.set(targetPosition[0], targetPosition[1], targetPosition[2]);
+      groupRef.current.rotation.set(targetRotation[0], targetRotation[1], targetRotation[2]);
+      return;
+    }
+
+    if (startTimeRef.current === null) {
+      startTimeRef.current = state.clock.getElapsedTime();
+    }
+
+    const elapsed = state.clock.getElapsedTime() - startTimeRef.current;
+    const transform = calculateItemTransform(elapsed, itemIndex, {
+      startPosition: stagingPosition,
+      targetPosition: targetPosition,
+      targetRotation: targetRotation,
+    });
+
+    groupRef.current.position.set(transform.position[0], transform.position[1], transform.position[2]);
+    groupRef.current.rotation.set(transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+
+    if (transform.isFinished) {
+      isFinishedRef.current = true;
+      if (itemIndex === totalItems - 1) {
+        setTimeout(() => {
+          onAnimationComplete?.();
+        }, 0);
+      }
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={stagingPosition} rotation={[0, 0, 0]}>
+      <PackingItem
+        type={placedItem.type}
+        color={color}
+        dimensions={placedItem.dimensions}
+        position={[0, 0, 0]}
+        rotation={[0, 0, 0]}
+      />
+    </group>
+  );
+}
+
+export default function Scene({
+  items = [],
+  packingResult = null,
+  animationTrigger = 0,
+  isAnimating = false,
+  onAnimationComplete = null,
+}) {
+  const isPacked = Boolean(packingResult && packingResult.status === 'success');
+  const [userViewMode, setUserViewMode] = useState(null);
+  const [prevPackingResult, setPrevPackingResult] = useState(packingResult);
+  const [prevAnimationTrigger, setPrevAnimationTrigger] = useState(animationTrigger);
   const [showWireframe, setShowWireframe] = useState(true);
   const [pageIndex, setPageIndex] = useState(0);
   const controlsRef = useRef();
+
+  // Reset user override if packingResult transitions or animation is triggered
+  if (packingResult !== prevPackingResult) {
+    setPrevPackingResult(packingResult);
+    setUserViewMode(null);
+  }
+  if (animationTrigger !== prevAnimationTrigger) {
+    setPrevAnimationTrigger(animationTrigger);
+    setUserViewMode(null);
+  }
+
+  // Derive active view mode
+  const viewMode = userViewMode ?? (
+    isPacked && packingResult.items.length > 0
+      ? 'packed'
+      : items.length > 0
+      ? 'selected'
+      : 'showcase'
+  );
+  const setViewMode = setUserViewMode;
 
   const resetCamera = () => {
     if (controlsRef.current) {
@@ -37,46 +136,29 @@ export default function Scene({ items = [] }) {
   const currentPage = Math.min(pageIndex, totalPages - 1);
   const visibleItems = items.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
-  /**
-   * Staging Layout:
-   * Positions items on an elevated inspection staging platform (Y >= 0.24m)
-   * strictly above the suitcase rim (H = 0.20m), guaranteeing zero wall clipping
-   * and making it immediately obvious this is an inspection staging layout, not a packed solution.
-   */
-  const getStagingPosition = (slotIndex, item) => {
-    const positions = [
-      [-0.10, -0.10], // Slot 0: Top-Left
-      [0.10, -0.10],  // Slot 1: Top-Right
-      [-0.10, 0.11],  // Slot 2: Bottom-Left
-      [0.10, 0.11],   // Slot 3: Bottom-Right
-    ];
-    const [x, z] = positions[slotIndex % 4];
-    const itemHeightMetres = (item.dimensions[2] || 10) / 100;
-    // Base platform is at Y = 0.23m (above suitcase walls); item sits at platform + half height
-    const y = 0.235 + itemHeightMetres / 2;
-
-    return [x, y, z];
-  };
-
   return (
     <div className="relative flex-1 min-h-[500px] lg:min-h-[600px] bg-[#070b14] border border-[#1b2337] rounded-2xl flex flex-col overflow-hidden shadow-2xl select-none">
       {/* 3D Viewport Overlay Header Tools */}
       <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
-        {/* View Mode Toggle: All 6 Models vs Selected Items */}
+        {/* View Mode Toggle */}
         <div className="flex items-center p-1 rounded-xl bg-[#0e1424]/90 border border-[#1e273e] backdrop-blur-md shadow-lg">
-          <button
-            type="button"
-            onClick={() => setViewMode('showcase')}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-              viewMode === 'showcase'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>6 Models Showcase</span>
-          </button>
+          {/* Packed Solution Button (when packed result exists) */}
+          {isPacked && (
+            <button
+              type="button"
+              onClick={() => setViewMode('packed')}
+              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'packed'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-emerald-400 hover:text-emerald-200'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Packed ({packingResult.items.length})</span>
+            </button>
+          )}
 
+          {/* Selected Staging Mode Button */}
           <button
             type="button"
             onClick={() => setViewMode('selected')}
@@ -87,7 +169,21 @@ export default function Scene({ items = [] }) {
             }`}
           >
             <Box className="w-3.5 h-3.5" />
-            <span>Selected Staging ({items.length})</span>
+            <span>Staging ({items.length})</span>
+          </button>
+
+          {/* 6 Models Showcase Button */}
+          <button
+            type="button"
+            onClick={() => setViewMode('showcase')}
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              viewMode === 'showcase'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Showcase</span>
           </button>
         </div>
 
@@ -141,23 +237,42 @@ export default function Scene({ items = [] }) {
         </button>
       </div>
 
-      {/* Top Right: Status Pill & Prominent Visual Preview Disclaimer */}
+      {/* Top Right: Status Pill & Badges */}
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1.5 pointer-events-none">
-        <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#0e1424]/90 border border-[#1e273e] backdrop-blur-md shadow-lg text-[11px] text-slate-300">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          <span>
-            {viewMode === 'showcase'
-              ? '6 Canonical 3D Models'
-              : items.length > 0
-              ? `${items.length} Item${items.length > 1 ? 's' : ''} Staged for Inspection`
-              : 'Suitcase Ready (Empty Selection)'}
-          </span>
-        </div>
-
-        {viewMode === 'selected' && items.length > 0 && (
-          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-600/40 text-amber-200 text-[10px] font-medium backdrop-blur-md shadow-md">
-            <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-            <span>Visual Preview Only — Engine Packing Pending</span>
+        {viewMode === 'packed' && isPacked ? (
+          <>
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 backdrop-blur-md shadow-lg text-[11px] text-emerald-200">
+              <span className={`w-2 h-2 rounded-full ${isAnimating ? 'bg-blue-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
+              <span>{isAnimating ? 'Sequential Packing in Progress...' : `${packingResult.items.length} Items Packed by Engine`}</span>
+            </div>
+            {packingResult.unplacedItems?.length > 0 && (
+              <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-600/40 text-amber-200 text-[10px] font-medium backdrop-blur-md shadow-md">
+                <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>{packingResult.unplacedItems.length} Unplaced Item{packingResult.unplacedItems.length > 1 ? 's' : ''}</span>
+              </div>
+            )}
+          </>
+        ) : viewMode === 'selected' ? (
+          <>
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#0e1424]/90 border border-[#1e273e] backdrop-blur-md shadow-lg text-[11px] text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span>
+                {items.length > 0
+                  ? `${items.length} Item${items.length > 1 ? 's' : ''} Staged for Inspection`
+                  : 'Suitcase Ready (Empty Selection)'}
+              </span>
+            </div>
+            {items.length > 0 && !isPacked && (
+              <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-600/40 text-amber-200 text-[10px] font-medium backdrop-blur-md shadow-md">
+                <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>Visual Preview Only — Engine Packing Pending</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#0e1424]/90 border border-[#1e273e] backdrop-blur-md shadow-lg text-[11px] text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span>6 Canonical 3D Models Showcase</span>
           </div>
         )}
       </div>
@@ -183,10 +298,110 @@ export default function Scene({ items = [] }) {
           {/* Interactive Suitcase (Internal 40 × 55 × 20 cm) */}
           <Suitcase />
 
+          {/* Optional Wireframe Usable Cavity Guide: 40 W × 20 H × 55 D cm */}
+          {showWireframe && (
+            <mesh position={[0, 0.10, 0]}>
+              <boxGeometry args={[0.40, 0.20, 0.55]} />
+              <meshBasicMaterial
+                color="#3b82f6"
+                wireframe
+                opacity={0.12}
+                transparent
+              />
+            </mesh>
+          )}
+
           {/* Render Items depending on active View Mode with Suspense for GLB loading */}
           <React.Suspense fallback={null}>
-            {viewMode === 'showcase' ? (
-              /* Mode A: All 6 Canonical Models Showcase Preview */
+            {viewMode === 'packed' && isPacked ? (
+              /* Mode 1: Packed Layout (Placed items inside suitcase with sequential animation) */
+              <group>
+                {/* Placed Items Animated Sequentially */}
+                {packingResult.items.map((placedItem, idx) => {
+                  const catalogItem = catalogData.find((c) => c.type === placedItem.type);
+                  const color = catalogItem?.color || '#3b82f6';
+                  const slotIndex = items.findIndex((it) => it.id === placedItem.id);
+                  const stagingPos = getStagingPosition(slotIndex >= 0 ? slotIndex : idx, placedItem.dimensions);
+                  const targetPos = convertEngineToThree(placedItem.position);
+                  const targetRot = placedItem.rotation || [0, 0, 0];
+
+                  return (
+                    <AnimatedPackingItem
+                      key={placedItem.id}
+                      placedItem={placedItem}
+                      itemIndex={idx}
+                      totalItems={packingResult.items.length}
+                      stagingPosition={stagingPos}
+                      targetPosition={targetPos}
+                      targetRotation={targetRot}
+                      color={color}
+                      animationTrigger={animationTrigger}
+                      onAnimationComplete={onAnimationComplete}
+                    />
+                  );
+                })}
+
+                {/* Unplaced Items Remain on Staging Shelf Outside Suitcase */}
+                {packingResult.unplacedItems?.length > 0 && (
+                  <group>
+                    <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                      <planeGeometry args={[0.38, 0.52]} />
+                      <meshBasicMaterial
+                        color="#f59e0b"
+                        opacity={0.06}
+                        transparent
+                        wireframe
+                      />
+                    </mesh>
+
+                    {packingResult.unplacedItems.map((unplaced, idx) => {
+                      const fullItem = items.find((it) => it.id === unplaced.id) || unplaced;
+                      const slotIndex = items.findIndex((it) => it.id === unplaced.id);
+                      const stagingPos = getStagingPosition(slotIndex >= 0 ? slotIndex : idx, fullItem.dimensions || [10, 10, 10]);
+                      return (
+                        <PackingItem
+                          key={unplaced.id}
+                          type={fullItem.type}
+                          color={fullItem.color}
+                          dimensions={fullItem.dimensions}
+                          position={stagingPos}
+                          rotation={[0, 0, 0]}
+                        />
+                      );
+                    })}
+                  </group>
+                )}
+              </group>
+            ) : viewMode === 'selected' ? (
+              /* Mode 2: User's Selected Items Staging Preview (Elevated above rim) */
+              <group>
+                {items.length > 0 && (
+                  <>
+                    <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                      <planeGeometry args={[0.38, 0.52]} />
+                      <meshBasicMaterial
+                        color="#3b82f6"
+                        opacity={0.06}
+                        transparent
+                        wireframe
+                      />
+                    </mesh>
+
+                    {visibleItems.map((item, idx) => (
+                      <PackingItem
+                        key={item.id}
+                        type={item.type}
+                        color={item.color}
+                        dimensions={item.dimensions}
+                        position={getStagingPosition(idx, item)}
+                        rotation={[0, 0, 0]}
+                      />
+                    ))}
+                  </>
+                )}
+              </group>
+            ) : (
+              /* Mode 3: All 6 Canonical Models Showcase Preview */
               <group>
                 {CANONICAL_SHOWCASE_LAYOUT.map((layout) => {
                   const catalogItem = catalogData.find((c) => c.type === layout.type);
@@ -202,36 +417,6 @@ export default function Scene({ items = [] }) {
                     />
                   );
                 })}
-              </group>
-            ) : (
-              /* Mode B: User's Selected Items Staging Preview (Elevated to avoid wall clipping) */
-              <group>
-                {items.length > 0 && (
-                  <>
-                    {/* Subtle Elevated Staging Guide Platform above suitcase cavity */}
-                    <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                      <planeGeometry args={[0.38, 0.52]} />
-                      <meshBasicMaterial
-                        color="#3b82f6"
-                        opacity={0.06}
-                        transparent
-                        wireframe
-                      />
-                    </mesh>
-
-                    {/* Render the currently paged items */}
-                    {visibleItems.map((item, idx) => (
-                      <PackingItem
-                        key={item.id}
-                        type={item.type}
-                        color={item.color}
-                        dimensions={item.dimensions}
-                        position={getStagingPosition(idx, item)}
-                        rotation={[0, 0, 0]}
-                      />
-                    ))}
-                  </>
-                )}
               </group>
             )}
           </React.Suspense>

@@ -1,0 +1,36 @@
+{
+  "status": "success",
+  "suitcase": {
+    "width": 40,
+    "depth": 55,
+    "height": 20
+  },
+  "items": [
+    {
+      "id": "sneakers-1",
+      "type": "sneakers",
+      "dimensions": [
+        20,
+        28,
+        12
+      ],
+      "position": [
+        10,
+        14,
+        6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "tier": 1,
+      "animation": "heavy_thud"
+    }
+  ],
+  "unplacedItems": [],
+  "validation": {
+    "withinBounds": true,
+    "noOverlaps": true
+  }
+}
