@@ -5,13 +5,8 @@ export default function Header() {
     <header className="w-full bg-[#0b0f19] border-b border-[#1b2234] px-4 lg:px-6 py-3 flex items-center justify-between select-none">
       {/* Left: Logo & Product Titles */}
       <div className="flex items-center space-x-3.5">
-        <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-indigo-600 to-violet-700 flex items-center justify-center shadow-lg shadow-blue-500/20 ring-1 ring-white/15">
-          {/* Isometric Cube Logo SVG */}
-          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m21 16-9 5-9-5V8l9-5 9 5v8Z" />
-            <path d="m3.27 6.96 8.73 4.91 8.73-4.91" />
-            <path d="M12 22V12" />
-          </svg>
+        <div className="relative w-8 h-8 rounded-lg bg-[#0e1424] border border-[#1e273e] flex items-center justify-center shadow-lg ring-1 ring-white/10 overflow-hidden p-0.5">
+          <img src="/logo.svg" alt="StowAway 3D Logo" className="w-full h-full object-contain" />
         </div>
 
         <div className="flex items-baseline space-x-2.5">

@@ -93,6 +93,11 @@ All dimensions are centimetres in `[width, depth, height]` order. Weights are ki
 | `folded_denim` | Folded denim | `[22,30,8]` | 0.65 | 2 | 0.4 | box | `#3b82f6` |
 | `laptop_15` | 15-inch laptop | `[35,24,2]` | 1.80 | 3 | 0 | slab | `#475569` |
 | `tsa_liquid_pouch` | TSA liquid pouch | `[15,10,5]` | 0.40 | 3 | 0 | box | `#f59e0b` |
+| `smartphone` | Smartphone | `[16,8,1]` | 0.20 | 3 | 0 | slab | `#06b6d4` |
+| `small_diary` | Small Diary | `[15,11,2]` | 0.25 | 1 | 0 | box | `#a855f7` |
+| `small_towel` | Small Towel | `[20,15,6]` | 0.25 | 2 | 0.5 | rounded box | `#0d9488` |
+| `snack_bar` | Snack Bar | `[12,4,2]` | 0.06 | 2 | 0 | box | `#d97706` |
+| `wallet` | Wallet | `[12,9,2]` | 0.10 | 2 | 0.1 | rounded box | `#78350f` |
 
 Every catalog entry must contain a stable `type`, display name, base dimensions, default weight, default tier, default elasticity, tags, geometry, color, and default animation.
 
@@ -438,3 +443,42 @@ The MVP is ready to demo when:
 - Both developers can run the project from a clean checkout and explain the shared protocol.
 
 **Final rule:** prioritize one correct end-to-end packing flow over a polished but disconnected frontend or a sophisticated engine that has not been integrated.
+
+---
+
+# Part F — Phase 9: Country-Based Travel Restrictions
+
+## F1. Purpose and Architecture
+Phase 9 introduces an advisory travel-policy engine and UI for evaluating passenger packing lists against international civil aviation safety regulations and destination-country customs/import laws.
+
+## F2. Data Layer & Schema
+- `src/data/travelCountries.js`: Standard catalog of departure and destination countries with human-readable names and major hub cities.
+- `src/data/travelPolicies.js`: Structured policy registry. Each entry follows:
+  - `id`: unique rule ID
+  - `categoryOrType`: matched item types or tags
+  - `departureCountry` / `destinationCountry` / `destinationCity`: route matching parameters (`null` = global standard)
+  - `jurisdiction`: governing aviation or customs authority
+  - `status`: `'prohibited'`, `'restricted'`, `'needs_verification'`, or `'no_rule_found'`
+  - `title`: rule summary title
+  - `explanation`: clear explanation
+  - `conditions`: quantity limits, operational rules (e.g. 100ml liquid limits, PED power-off rules)
+  - `baggageType`: `'carry_on'`, `'checked'`, or `'both'`
+  - `sourceName` & `sourceUrl`: official authority citation
+  - `lastVerified`: verification date
+  - `confidence`: `'verified'`, `'advisory'`, or `'unverified'`
+- `src/policy/evaluateRestrictions.js`: Pure evaluation function that scores route relevance, groups duplicate items into single warning entries with quantity counters, and sorts by severity.
+- `src/components/TravelRestrictions.jsx`: Integrated UI card and expanded modal in the right sidebar. Allows item removal and preserves journey selections across packing operations.
+
+---
+
+# Part G — Dedicated Overflow Area Beside the Suitcase
+
+## G1. Coordinate System & Layout
+- Suitcase internal cavity: $X \in [-0.20, +0.20]$, $Y \in [0, 0.20]$, $Z \in [-0.275, +0.275]$ m.
+- Overflow Area: positioned beside the right wall of the suitcase ($+X \ge 0.38$ m, right side in default camera view).
+- Resting Plane: items sit flush on the grounded overflow tray floor at $Y \approx 0.002$ m + item height / 2.
+- Grid: neatly arranges unplaced items in rows along $Z$, expanding into additional $+X$ columns if count exceeds 3.
+- Visual Indicator: includes grounded dark tray mat with an amber border guide and a 3D "Doesn't Fit" badge indicator.
+- Dynamic Camera Framing: `getOptimalCameraFraming()` smoothly adjusts the orbit target and camera distance when overflow items appear, keeping both the suitcase and overflow area in full view without unnecessary zoom out when empty.
+
+

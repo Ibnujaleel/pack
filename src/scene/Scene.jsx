@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Html } from '@react-three/drei';
 import Suitcase from './Suitcase';
 import PackingItem from './PackingItem';
 import catalogData from '../data/items_catalog.json';
 import { Eye, Layers, RotateCcw, Box, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getStagingPosition, convertEngineToThree, calculateItemTransform } from './animationSequence.js';
+import {
+  getOverflowPosition,
+  getOverflowAreaBounds,
+  getOptimalCameraFraming
+} from './overflowLayout.js';
 
 /**
  * Preview offsets for the 6 canonical models to inspect them inside/above the suitcase
@@ -124,11 +129,38 @@ export default function Scene({
   );
   const setViewMode = setUserViewMode;
 
+  const unplacedCount = isPacked && viewMode === 'packed'
+    ? (packingResult.unplacedItems?.length || 0)
+    : 0;
+  const cameraConfig = getOptimalCameraFraming(unplacedCount);
+
   const resetCamera = () => {
     if (controlsRef.current) {
-      controlsRef.current.reset();
+      controlsRef.current.target.set(
+        cameraConfig.target[0],
+        cameraConfig.target[1],
+        cameraConfig.target[2]
+      );
+      controlsRef.current.object.position.set(
+        cameraConfig.position[0],
+        cameraConfig.position[1],
+        cameraConfig.position[2]
+      );
+      controlsRef.current.update();
     }
   };
+
+  // Adjust camera target dynamically when overflow items appear/disappear
+  React.useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.target.set(
+        cameraConfig.target[0],
+        cameraConfig.target[1],
+        cameraConfig.target[2]
+      );
+      controlsRef.current.update();
+    }
+  }, [unplacedCount, cameraConfig.target]);
 
   // Staging shelf accommodates up to 4 items per page cleanly without clipping
   const ITEMS_PER_PAGE = 4;
@@ -137,7 +169,7 @@ export default function Scene({
   const visibleItems = items.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   return (
-    <div className="relative flex-1 min-h-[500px] lg:min-h-[600px] bg-[#070b14] border border-[#1b2337] rounded-2xl flex flex-col overflow-hidden shadow-2xl select-none">
+    <div className="relative flex-1 min-h-[500px] lg:min-h-[600px] bg-[#162032] border border-[#23304c] rounded-2xl flex flex-col overflow-hidden shadow-2xl select-none">
       {/* 3D Viewport Overlay Header Tools */}
       <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
         {/* View Mode Toggle */}
@@ -283,6 +315,7 @@ export default function Scene({
           shadows
           camera={{ position: [0.70, 0.75, 0.85], fov: 42, near: 0.05, far: 20 }}
         >
+          <color attach="background" args={['#162032']} />
           {/* Studio Lighting */}
           <ambientLight intensity={0.65} />
           <directionalLight
@@ -341,36 +374,90 @@ export default function Scene({
                   );
                 })}
 
-                {/* Unplaced Items Remain on Staging Shelf Outside Suitcase */}
-                {packingResult.unplacedItems?.length > 0 && (
-                  <group>
-                    <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                      <planeGeometry args={[0.38, 0.52]} />
-                      <meshBasicMaterial
-                        color="#f59e0b"
-                        opacity={0.06}
-                        transparent
-                        wireframe
-                      />
-                    </mesh>
+                {/* Dedicated Overflow Area Beside Suitcase (+X side) */}
+                {packingResult.unplacedItems?.length > 0 && (() => {
+                  const unplacedList = packingResult.unplacedItems;
+                  const bounds = getOverflowAreaBounds(unplacedList.length);
 
-                    {packingResult.unplacedItems.map((unplaced, idx) => {
-                      const fullItem = items.find((it) => it.id === unplaced.id) || unplaced;
-                      const slotIndex = items.findIndex((it) => it.id === unplaced.id);
-                      const stagingPos = getStagingPosition(slotIndex >= 0 ? slotIndex : idx, fullItem.dimensions || [10, 10, 10]);
-                      return (
-                        <PackingItem
-                          key={unplaced.id}
-                          type={fullItem.type}
-                          color={fullItem.color}
-                          dimensions={fullItem.dimensions}
-                          position={stagingPos}
-                          rotation={[0, 0, 0]}
+                  return (
+                    <group>
+                      {/* 1. Floor Staging Mat for Overflow Items */}
+                      <mesh
+                        position={bounds.center}
+                        rotation={[-Math.PI / 2, 0, 0]}
+                        receiveShadow
+                      >
+                        <planeGeometry args={bounds.size} />
+                        <meshStandardMaterial
+                          color="#111827"
+                          roughness={0.8}
+                          metalness={0.15}
                         />
-                      );
-                    })}
-                  </group>
-                )}
+                      </mesh>
+
+                      {/* 2. Subtle Amber Border Guide */}
+                      <mesh
+                        position={[bounds.center[0], 0.002, bounds.center[2]]}
+                        rotation={[-Math.PI / 2, 0, 0]}
+                      >
+                        <planeGeometry args={bounds.size} />
+                        <meshBasicMaterial
+                          color="#f59e0b"
+                          opacity={0.35}
+                          transparent
+                          wireframe
+                        />
+                      </mesh>
+
+                      {/* 3. "Doesn't Fit" Badge Indicator */}
+                      <Html
+                        position={[bounds.center[0], 0.015, -bounds.size[1] / 2 - 0.025]}
+                        center
+                        distanceFactor={1.3}
+                      >
+                        <div className="px-2 py-0.5 rounded-md bg-[#0e1424]/95 border border-amber-500/50 text-amber-300 text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap shadow-lg flex items-center space-x-1.5 select-none pointer-events-none">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span>Doesn't Fit ({unplacedList.length})</span>
+                        </div>
+                      </Html>
+
+                      {/* 4. Overflow Items positioned beside suitcase in neat grid */}
+                      {unplacedList.map((unplaced, idx) => {
+                        const fullItem = items.find((it) => it.id === unplaced.id) || unplaced;
+                        const overflowPos = getOverflowPosition(
+                          idx,
+                          unplacedList.length,
+                          fullItem.dimensions || [10, 10, 10]
+                        );
+
+                        return (
+                          <group key={unplaced.id}>
+                            {/* Individual slot floor highlight */}
+                            <mesh
+                              position={[overflowPos[0], 0.0025, overflowPos[2]]}
+                              rotation={[-Math.PI / 2, 0, 0]}
+                            >
+                              <planeGeometry args={[0.12, 0.12]} />
+                              <meshBasicMaterial
+                                color="#f59e0b"
+                                opacity={0.12}
+                                transparent
+                              />
+                            </mesh>
+
+                            <PackingItem
+                              type={fullItem.type}
+                              color={fullItem.color}
+                              dimensions={fullItem.dimensions}
+                              position={overflowPos}
+                              rotation={[0, 0, 0]}
+                            />
+                          </group>
+                        );
+                      })}
+                    </group>
+                  );
+                })()}
               </group>
             ) : viewMode === 'selected' ? (
               /* Mode 2: User's Selected Items Staging Preview (Elevated above rim) */
@@ -421,11 +508,11 @@ export default function Scene({
             )}
           </React.Suspense>
 
-          {/* Soft Ground Contact Shadow underneath suitcase */}
+          {/* Soft Ground Contact Shadow underneath suitcase & overflow tray */}
           <ContactShadows
-            position={[0, -0.045, 0]}
+            position={[unplacedCount > 0 ? 0.16 : 0, -0.045, 0]}
             opacity={0.7}
-            scale={1.4}
+            scale={unplacedCount > 0 ? 2.2 : 1.4}
             blur={2.0}
             far={1.0}
             color="#000000"
@@ -434,7 +521,7 @@ export default function Scene({
           {/* Smooth OrbitControls for 360-degree inspection */}
           <OrbitControls
             ref={controlsRef}
-            target={[0, 0.12, 0]}
+            target={cameraConfig.target}
             enableDamping
             dampingFactor={0.06}
             minDistance={0.35}

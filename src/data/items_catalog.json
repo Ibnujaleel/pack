@@ -106,5 +106,65 @@
     "geometry": "cylinder",
     "color": "#14b8a6",
     "animation": "soft_settle"
+  },
+  {
+    "type": "smartphone",
+    "name": "Smartphone",
+    "dimensions": [16, 8, 1],
+    "weight": 0.20,
+    "tier": 3,
+    "elasticity": 0,
+    "tags": ["fragile", "electronics"],
+    "geometry": "slab",
+    "color": "#06b6d4",
+    "animation": "gentle_glide"
+  },
+  {
+    "type": "small_diary",
+    "name": "Small Diary",
+    "dimensions": [15, 11, 2],
+    "weight": 0.25,
+    "tier": 1,
+    "elasticity": 0,
+    "tags": [],
+    "geometry": "box",
+    "color": "#a855f7",
+    "animation": "heavy_thud"
+  },
+  {
+    "type": "small_towel",
+    "name": "Small Towel",
+    "dimensions": [20, 15, 6],
+    "weight": 0.25,
+    "tier": 2,
+    "elasticity": 0.5,
+    "tags": [],
+    "geometry": "rounded box",
+    "color": "#0d9488",
+    "animation": "soft_settle"
+  },
+  {
+    "type": "snack_bar",
+    "name": "Snack Bar",
+    "dimensions": [12, 4, 2],
+    "weight": 0.06,
+    "tier": 2,
+    "elasticity": 0,
+    "tags": ["food"],
+    "geometry": "box",
+    "color": "#d97706",
+    "animation": "soft_settle"
+  },
+  {
+    "type": "wallet",
+    "name": "Wallet",
+    "dimensions": [12, 9, 2],
+    "weight": 0.10,
+    "tier": 2,
+    "elasticity": 0.1,
+    "tags": [],
+    "geometry": "rounded box",
+    "color": "#78350f",
+    "animation": "soft_settle"
   }
 ]

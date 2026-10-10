@@ -7,6 +7,7 @@ import PackingStatus from './components/PackingStatus';
 import SuitcaseDimensions from './components/SuitcaseDimensions';
 import FooterStatus from './components/FooterStatus';
 import ItemScannerModal from './components/ItemScannerModal';
+import TravelRestrictions from './components/TravelRestrictions';
 import { packItems } from './engine/index.js';
 
 export default function App() {
@@ -16,6 +17,9 @@ export default function App() {
   const [animationTrigger, setAnimationTrigger] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [departureCountry, setDepartureCountry] = useState('United Arab Emirates');
+  const [destinationCountry, setDestinationCountry] = useState('United Kingdom');
+  const [destinationCity, setDestinationCity] = useState('London');
   const idCounterRef = useRef({});
 
   // Add an item instance with a guaranteed unique instance ID
@@ -164,7 +168,7 @@ export default function App() {
             onAnimationComplete={handleAnimationComplete}
           />
 
-          {/* Right Column: Controls, Packing Status, Suitcase Dimensions */}
+          {/* Right Column: Controls, Packing Status, Travel Restrictions, Suitcase Dimensions */}
           <div className="w-full lg:w-72 xl:w-80 shrink-0 flex flex-col gap-4">
             <PackControls
               itemCount={items.length}
@@ -175,6 +179,16 @@ export default function App() {
               onReplay={handleReplay}
               onResetPacking={handleResetPacking}
               onClearItems={handleClearItems}
+            />
+            <TravelRestrictions
+              items={items}
+              onRemoveItem={handleRemoveItem}
+              departureCountry={departureCountry}
+              setDepartureCountry={setDepartureCountry}
+              destinationCountry={destinationCountry}
+              setDestinationCountry={setDestinationCountry}
+              destinationCity={destinationCity}
+              setDestinationCity={setDestinationCity}
             />
             <PackingStatus
               items={items}

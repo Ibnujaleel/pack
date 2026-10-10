@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import catalog from '../../data/items_catalog.json';
 
 describe('Canonical Items Catalog (Contract A3)', () => {
-  it('contains exactly nine canonical items', () => {
-    expect(catalog).toHaveLength(9);
+  it('contains exactly fourteen canonical items in catalog', () => {
+    expect(catalog).toHaveLength(14);
   });
 
-  it('contains unique type IDs matching contract A3', () => {
+  it('contains unique type IDs matching canonical catalog including Phase 8 items', () => {
     const types = catalog.map((item) => item.type);
     expect(types).toEqual([
       'sneakers',
@@ -18,6 +18,11 @@ describe('Canonical Items Catalog (Contract A3)', () => {
       'cell_phone',
       'phone_charger',
       'charging_cable',
+      'smartphone',
+      'small_diary',
+      'small_towel',
+      'snack_bar',
+      'wallet',
     ]);
   });
 
@@ -145,5 +150,67 @@ describe('Canonical Items Catalog (Contract A3)', () => {
     expect(item.geometry).toBe('cylinder');
     expect(item.animation).toBe('soft_settle');
     expect(item.tags).toEqual([]);
+  });
+
+  it('validates smartphone against Phase 8 specifications', () => {
+    const item = catalog.find((i) => i.type === 'smartphone');
+    expect(item).toBeDefined();
+    expect(item.name).toBe('Smartphone');
+    expect(item.dimensions).toEqual([16, 8, 1]);
+    expect(item.weight).toBe(0.20);
+    expect(item.tier).toBe(3);
+    expect(item.elasticity).toBe(0);
+    expect(item.geometry).toBe('slab');
+    expect(item.animation).toBe('gentle_glide');
+    expect(item.tags).toEqual(['fragile', 'electronics']);
+  });
+
+  it('validates small_diary against Phase 8 specifications', () => {
+    const item = catalog.find((i) => i.type === 'small_diary');
+    expect(item).toBeDefined();
+    expect(item.name).toBe('Small Diary');
+    expect(item.dimensions).toEqual([15, 11, 2]);
+    expect(item.weight).toBe(0.25);
+    expect(item.tier).toBe(1);
+    expect(item.elasticity).toBe(0);
+    expect(item.geometry).toBe('box');
+    expect(item.animation).toBe('heavy_thud');
+  });
+
+  it('validates small_towel against Phase 8 specifications', () => {
+    const item = catalog.find((i) => i.type === 'small_towel');
+    expect(item).toBeDefined();
+    expect(item.name).toBe('Small Towel');
+    expect(item.dimensions).toEqual([20, 15, 6]);
+    expect(item.weight).toBe(0.25);
+    expect(item.tier).toBe(2);
+    expect(item.elasticity).toBe(0.5);
+    expect(item.geometry).toBe('rounded box');
+    expect(item.animation).toBe('soft_settle');
+  });
+
+  it('validates snack_bar against Phase 8 specifications', () => {
+    const item = catalog.find((i) => i.type === 'snack_bar');
+    expect(item).toBeDefined();
+    expect(item.name).toBe('Snack Bar');
+    expect(item.dimensions).toEqual([12, 4, 2]);
+    expect(item.weight).toBe(0.06);
+    expect(item.tier).toBe(2);
+    expect(item.elasticity).toBe(0);
+    expect(item.geometry).toBe('box');
+    expect(item.animation).toBe('soft_settle');
+    expect(item.tags).toContain('food');
+  });
+
+  it('validates wallet against Phase 8 specifications', () => {
+    const item = catalog.find((i) => i.type === 'wallet');
+    expect(item).toBeDefined();
+    expect(item.name).toBe('Wallet');
+    expect(item.dimensions).toEqual([12, 9, 2]);
+    expect(item.weight).toBe(0.10);
+    expect(item.tier).toBe(2);
+    expect(item.elasticity).toBe(0.1);
+    expect(item.geometry).toBe('rounded box');
+    expect(item.animation).toBe('soft_settle');
   });
 });

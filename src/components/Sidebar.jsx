@@ -3,21 +3,26 @@ import { Package, Plus, Search, Trash2, X, Camera } from 'lucide-react';
 import catalogData from '../data/items_catalog.json';
 import ItemIcon from './ItemIcon';
 
-const CANONICAL_SIX_TYPES = [
+const CATALOG_VISIBLE_TYPES = [
   'sneakers',
   'hardcover_book',
   'rolled_tshirt',
   'folded_denim',
   'laptop_15',
   'tsa_liquid_pouch',
+  'smartphone',
+  'small_diary',
+  'small_towel',
+  'snack_bar',
+  'wallet',
 ];
 
 export default function Sidebar({ items = [], onAddItem, onRemoveItem, onClearItems, onOpenScanner }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter catalog items by search query and preserve 6 canonical items UI
+  // Filter catalog items by search query and available catalog types
   const filteredCatalog = catalogData
-    .filter((item) => CANONICAL_SIX_TYPES.includes(item.type))
+    .filter((item) => CATALOG_VISIBLE_TYPES.includes(item.type))
     .filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       if (!q) return true;

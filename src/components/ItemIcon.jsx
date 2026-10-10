@@ -1,5 +1,5 @@
 import React from 'react';
-import { Book, Shirt, Laptop, Droplets, Layers } from 'lucide-react';
+import { Book, Shirt, Laptop, Droplets, Layers, Smartphone, BookOpen, Scroll, Cookie, Wallet } from 'lucide-react';
 
 export default function ItemIcon({ type, color, className = "w-5 h-5" }) {
   // Custom sneaker icon SVG
@@ -35,6 +35,26 @@ export default function ItemIcon({ type, color, className = "w-5 h-5" }) {
 
   if (type === 'tsa_liquid_pouch') {
     return <Droplets className={className} style={{ color }} />;
+  }
+
+  if (type === 'smartphone' || type === 'cell_phone') {
+    return <Smartphone className={className} style={{ color }} />;
+  }
+
+  if (type === 'small_diary') {
+    return <BookOpen className={className} style={{ color }} />;
+  }
+
+  if (type === 'small_towel') {
+    return <Scroll className={className} style={{ color }} />;
+  }
+
+  if (type === 'snack_bar') {
+    return <Cookie className={className} style={{ color }} />;
+  }
+
+  if (type === 'wallet') {
+    return <Wallet className={className} style={{ color }} />;
   }
 
   return <Layers className={className} style={{ color }} />;

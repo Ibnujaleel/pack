@@ -22,15 +22,15 @@ export default function Suitcase() {
       <mesh position={[0, -0.001, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[W, D]} />
         <meshStandardMaterial
-          color="#0f1523"
-          roughness={0.9}
+          color="#222f46"
+          roughness={0.85}
           metalness={0.1}
         />
       </mesh>
 
       {/* Internal Floor Grid lines */}
       <gridHelper
-        args={[0.60, 12, '#3b82f6', '#1e293b']}
+        args={[0.60, 12, '#3b82f6', '#3b4c68']}
         position={[0, 0.001, 0]}
       />
 
