@@ -266,7 +266,7 @@ export function allocate(items = [], options = {}) {
             }
           }
 
-          return {
+          const placement = {
             id: item.id,
             type: item.type,
             profile: { ...item.profile },
@@ -275,6 +275,13 @@ export function allocate(items = [], options = {}) {
             swapped: orient.swapped,
             supportRatio,
           };
+          if (item.label !== undefined) {
+            placement.label = item.label;
+          }
+          if (item.color !== undefined) {
+            placement.color = item.color;
+          }
+          return placement;
         }
       }
       return null;

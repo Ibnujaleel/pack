@@ -34,19 +34,35 @@ export function compileProtocol(placements = [], unplaced = [], validation = {})
   const safePlacements = Array.isArray(placements) ? placements : [];
   const safeUnplaced = Array.isArray(unplaced) ? unplaced : [];
 
-  const items = safePlacements.map((p) => ({
-    id: p.id,
-    type: p.type,
-    dimensions: [p.dims[0], p.dims[1], p.dims[2]],
-    position: [
+  const items = safePlacements.map((p) => {
+    const itemObj = {
+      id: p.id,
+      type: p.type,
+    };
+
+    if (p.type === 'custom') {
+      const label = p.label ?? p.custom?.name;
+      const color = p.color ?? p.profile?.color;
+      if (label !== undefined) {
+        itemObj.label = label;
+      }
+      if (color !== undefined) {
+        itemObj.color = color;
+      }
+    }
+
+    itemObj.dimensions = [p.dims[0], p.dims[1], p.dims[2]];
+    itemObj.position = [
       round2(p.min[0] + p.dims[0] / 2),
       round2(p.min[1] + p.dims[1] / 2),
       round2(p.min[2] + p.dims[2] / 2),
-    ],
-    rotation: [0, 0, 0],
-    tier: p.profile.tier,
-    animation: p.profile.animation,
-  }));
+    ];
+    itemObj.rotation = [0, 0, 0];
+    itemObj.tier = p.profile.tier;
+    itemObj.animation = p.profile.animation;
+
+    return itemObj;
+  });
 
   const unplacedItems = safeUnplaced.map((u) => ({
     id: u.id,

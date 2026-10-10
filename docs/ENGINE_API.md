@@ -227,3 +227,82 @@ const response = packItems(request, deps = {});
 2. **Usable gaps:** Candidate points are generated at bounding box corners, not using a full maximal-voids decomposition. Empty spaces smaller than an item's footprint cannot be consolidated.
 3. **Two orientations only:** Items can only be packed in `[W, D, H]` or `[D, W, H]`. No rolling onto sides (height never changes).
 4. **Greedy heuristic:** Allocation is greedy and deterministic; it does not backtrack to find a globally optimal packing combination.
+
+---
+
+## 8. Custom Items (Additive Proposal)
+
+StowAway 3D supports custom user-defined items not found in the fixed catalog (`src/data/categories.json`).
+
+### Request Format
+```json
+{
+  "items": [
+    {
+      "id": "my-mug-1",
+      "type": "custom",
+      "custom": {
+        "name": "Ceramic Souvenir Mug",
+        "category": "fragile",
+        "dimensions": [12, 12, 10],
+        "weight": 0.35
+      },
+      "overrides": {
+        "height": 10
+      }
+    }
+  ]
+}
+```
+
+### Validation & Category Defaults
+- `type`: Must be `"custom"`.
+- `custom.name`: Non-empty string up to 40 characters.
+- `custom.category`: Must be one of the four categories:
+  - `hard`: defaults `[20, 20, 10]` cm, 1.0 kg, Tier 1, elasticity 0, animation `heavy_thud`, color `#64748b`.
+  - `soft`: defaults `[25, 25, 8]` cm, 0.5 kg, Tier 2, elasticity 0.5, animation `soft_settle`, color `#22c55e`.
+  - `fragile`: defaults `[20, 15, 5]` cm, 0.5 kg, Tier 3, elasticity 0, animation `gentle_glide`, color `#ec4899`, tags `["fragile"]`.
+  - `liquid`: defaults `[12, 8, 5]` cm, 0.4 kg, Tier 3, elasticity 0, animation `gentle_glide`, color `#f59e0b`, tags `["liquid"]`.
+- `custom.dimensions`: Optional array of 3 finite positive numbers in cm `[W, D, H]`. If omitted, falls back to category defaults.
+- `custom.weight`: Optional finite number >= 0 in kg. If omitted, falls back to category defaults.
+- `overrides`: Optional overrides (`height` > 0, `weight` >= 0) are applied after category resolution following standard A6 rules.
+
+### Output Protocol & Additive Fields
+For custom items, the response includes `type: "custom"`, along with two additive fields:
+- `label` (`string`): The user-specified custom item name (e.g. `"Ceramic Souvenir Mug"`).
+- `color` (`string`): The category color hex code (e.g. `"#ec4899"`).
+
+> [!IMPORTANT]
+> **Additive Protocol Change Notice:**
+> The `label` and `color` fields are an additive protocol change that Afsal must agree to before the Three.js scene and UI consume them for custom item rendering and labeling. Catalog items strictly do NOT receive these fields.
+
+### Real Example Response
+```json
+{
+  "status": "success",
+  "suitcase": {
+    "width": 40,
+    "depth": 55,
+    "height": 20
+  },
+  "items": [
+    {
+      "id": "my-mug-1",
+      "type": "custom",
+      "label": "Ceramic Souvenir Mug",
+      "color": "#ec4899",
+      "dimensions": [12, 12, 10],
+      "position": [6, 6, 5],
+      "rotation": [0, 0, 0],
+      "tier": 3,
+      "animation": "gentle_glide"
+    }
+  ],
+  "unplacedItems": [],
+  "validation": {
+    "withinBounds": true,
+    "noOverlaps": true
+  }
+}
+```
+

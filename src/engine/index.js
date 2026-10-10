@@ -12,7 +12,9 @@
  */
 
 import defaultCatalog from '../data/items_catalog.json' with { type: 'json' };
+import defaultCategories from '../data/categories.json' with { type: 'json' };
 import { validateRequest } from './validateRequest.js';
+import { resolveItem } from './resolveItem.js';
 import { getEffectiveProfile } from './ruleEngine.js';
 import { allocate } from './allocator.js';
 import { validatePacking } from './validatePacking.js';
@@ -22,20 +24,22 @@ import { compileProtocol } from './protocolCompiler.js';
  * Packs requested items into the suitcase using the deterministic heuristic engine.
  *
  * @param {object} request - The packing request containing { items: [...] }
- * @param {object} [deps={}] - Dependency injection options (e.g. custom catalog or validator for testing)
+ * @param {object} [deps={}] - Dependency injection options (e.g. custom catalog, categories, or validator)
  * @returns {object} Canonical protocol success or error response
  */
 export function packItems(request, deps = {}) {
   try {
     const catalog = deps.catalog || defaultCatalog;
+    const categories = deps.categories || defaultCategories;
     const validateRequestFn = deps.validateRequest || validateRequest;
+    const resolveItemFn = deps.resolveItem || resolveItem;
     const getEffectiveProfileFn = deps.getEffectiveProfile || getEffectiveProfile;
     const allocateFn = deps.allocate || allocate;
     const validatePackingFn = deps.validatePacking || validatePacking;
     const compileProtocolFn = deps.compileProtocol || compileProtocol;
 
-    // 1. Validate request against canonical catalog
-    const valResult = validateRequestFn(request, catalog);
+    // 1. Validate request against canonical catalog and categories
+    const valResult = validateRequestFn(request, catalog, categories);
     if (!valResult.ok) {
       return {
         status: 'error',
@@ -49,26 +53,36 @@ export function packItems(request, deps = {}) {
       return compileProtocolFn([], [], { withinBounds: true, noOverlaps: true });
     }
 
-    // 3. Recompute effective profiles from catalog defaults plus validated overrides
-    const catalogMap = new Map(catalog.map((entry) => [entry.type, entry]));
+    // 3. Resolve items and derive effective profiles
     const itemsWithProfiles = [];
 
     for (const item of valResult.items) {
-      const catalogEntry = catalogMap.get(item.type);
-      if (!catalogEntry) {
+      const resolvedEntry = resolveItemFn(item, catalog, categories);
+      if (!resolvedEntry) {
         return {
           status: 'error',
           code: 'INVALID_INPUT',
-          message: `Unknown item type: "${item.type}".`,
+          message: `Could not resolve item "${item.id}" of type "${item.type}".`,
         };
       }
 
-      const profile = getEffectiveProfileFn(catalogEntry, item.overrides);
-      itemsWithProfiles.push({
+      const profile = getEffectiveProfileFn(resolvedEntry, item.overrides);
+      const itemWithProfile = {
         id: item.id,
         type: item.type,
         profile,
-      });
+      };
+
+      if (item.type === 'custom') {
+        if (resolvedEntry.name) {
+          itemWithProfile.label = resolvedEntry.name;
+        }
+        if (resolvedEntry.color) {
+          itemWithProfile.color = resolvedEntry.color;
+        }
+      }
+
+      itemsWithProfiles.push(itemWithProfile);
     }
 
     // 4. Deterministic greedy allocation with top-layer enforcement for tier 3
