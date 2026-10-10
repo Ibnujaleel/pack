@@ -1,211 +1,79 @@
 import React from 'react';
 import * as THREE from 'three';
+import { useGLTF } from '@react-three/drei';
 
 /**
- * 1. HIGH-REALISM SNEAKERS MODEL (W: 0.20m, D: 0.28m, H: 0.12m)
- * Renders a sculpted, realistic sneaker pair strictly within 20 × 28 × 12 cm.
- * Features:
- * - Layered dual-density sole (gripped outsole + sculpted EVA midsole + toe spring)
- * - Ergonomically shaped upper with rounded toe cap and side quarter panels
- * - Contrast athletic side sweep overlay
- * - Padded ankle collar with dark sockliner recess
- * - Detailed eyestay with metallic eyelets and criss-cross laces
- * - Padded tongue with branding patch and rear heel pull-loop
+ * 1. IMPORTED GLB SNEAKERS MODEL
+ * Loads the realistic Blender 3.3.1 sneaker model (two shoes, 7,356 triangles, 4K textures).
+ * - Excludes the giant studio backdrop ('Plane' mesh).
+ * - Clones hierarchy so multiple instances do not collide or mutate shared scene graph nodes.
+ * - Preserves materials and 4K textures.
+ * - Uniformly normalizes scale to fit the canonical catalog bounding box: 20 × 28 × 12 cm.
+ * - Centers the model at origin for consistent alignment with suitcase coordinates.
  */
-function SneakersModel({ color = '#ea580c' }) {
-  const shoeW = 0.088; // Total width for pair: 0.088 * 2 + 0.016 gap = 0.192m <= 0.20m
-  const shoeL = 0.265; // Total depth: <= 0.28m
-  const heelLift = 0.012; // Heel-to-toe drop
+function SneakersModel({ dimensions = [20, 28, 12] }) {
+  const { scene } = useGLTF('/sneaker.glb');
 
-  const renderSingleShoe = (isLeft) => {
-    const xPos = isLeft ? -0.051 : 0.051;
-    const curveSign = isLeft ? -1 : 1; // Slight lateral curvature for foot shape
+  const modelGroup = React.useMemo(() => {
+    // Deep clone hierarchy so multiple instances render independently without node collision
+    const clone = scene.clone(true);
 
-    return (
-      <group key={isLeft ? 'left' : 'right'} position={[xPos, 0, 0]}>
-        {/* === A. LAYERED SOLE SYSTEM === */}
-        {/* 1. Outsole Tread Base (Dark Rubber) */}
-        <mesh position={[0, 0.005, 0]} receiveShadow>
-          <boxGeometry args={[shoeW * 0.96, 0.01, shoeL * 0.98]} />
-          <meshStandardMaterial color="#334155" roughness={0.9} />
-        </mesh>
+    // Strip out the 18-meter Blender backdrop plane ('Plane')
+    const backdropPlane = clone.getObjectByName('Plane');
+    if (backdropPlane && backdropPlane.parent) {
+      backdropPlane.parent.remove(backdropPlane);
+    }
 
-        {/* 2. Sculpted EVA Midsole - Heel Wedge (taller at rear) */}
-        <mesh position={[0, 0.018 + heelLift / 2, -shoeL * 0.2]} castShadow receiveShadow>
-          <boxGeometry args={[shoeW, 0.026 + heelLift, shoeL * 0.55]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-        </mesh>
+    // Enable shadow casting and receiving on the shoe meshes
+    clone.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
 
-        {/* 3. Sculpted EVA Midsole - Forefoot with Toe Spring (tapers towards front) */}
-        <group position={[0, 0.018, shoeL * 0.25]} rotation={[-0.04, 0, 0]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[shoeW * 0.98, 0.022, shoeL * 0.48]} />
-            <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-          </mesh>
-        </group>
+    // Compute bounding box of the two shoes
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
 
-        {/* 4. Midsole Accent Groove Stripe */}
-        <mesh position={[0, 0.022, -shoeL * 0.05]}>
-          <boxGeometry args={[shoeW * 1.01, 0.003, shoeL * 0.85]} />
-          <meshStandardMaterial color={color} roughness={0.5} />
-        </mesh>
+    // Target dimensions from catalog: [W, D, H] in cm -> metres
+    const targetW = (dimensions[0] || 20) / 100;
+    const targetD = (dimensions[1] || 28) / 100;
+    const targetH = (dimensions[2] || 12) / 100;
 
-        {/* === B. UPPER BODY & PANELS === */}
-        {/* 5. Main Foot Bed / Lower Upper */}
-        <mesh position={[curveSign * 0.002, 0.042, -shoeL * 0.02]} castShadow receiveShadow>
-          <boxGeometry args={[shoeW * 0.90, 0.038, shoeL * 0.88]} />
-          <meshStandardMaterial color={color} roughness={0.55} />
-        </mesh>
-
-        {/* 6. Rounded Toe Box (Curved Front Cap) */}
-        <group position={[curveSign * 0.002, 0.032, shoeL * 0.34]}>
-          {/* Rounded Front Cap */}
-          <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-            <cylinderGeometry args={[0.022, 0.022, shoeW * 0.84, 24, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color={color} roughness={0.55} />
-          </mesh>
-          {/* Protective Front Rubber Toe Bumper */}
-          <mesh position={[0, -0.005, 0.014]} castShadow>
-            <boxGeometry args={[shoeW * 0.75, 0.018, 0.012]} />
-            <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
-          </mesh>
-        </group>
-
-        {/* 7. Perforated Vamp Top Panel */}
-        <mesh position={[curveSign * 0.002, 0.048, shoeL * 0.18]} rotation={[-0.14, 0, 0]}>
-          <planeGeometry args={[shoeW * 0.58, shoeL * 0.24]} />
-          <meshStandardMaterial color="#c2410c" roughness={0.7} />
-        </mesh>
-
-        {/* 8. Contrast Athletic Side Sweep (Swoosh / Racing Stripe) */}
-        {[-1, 1].map((side) => (
-          <group key={`stripe-${side}`} position={[side * (shoeW * 0.455), 0.045, -shoeL * 0.04]}>
-            {/* Main sweeping stripe */}
-            <mesh rotation={[0, side * Math.PI / 2, 0.22]}>
-              <boxGeometry args={[shoeL * 0.45, 0.007, 0.002]} />
-              <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
-            </mesh>
-            {/* Secondary lower accent accent */}
-            <mesh position={[0, -0.01, 0.02]} rotation={[0, side * Math.PI / 2, 0.12]}>
-              <boxGeometry args={[shoeL * 0.32, 0.004, 0.002]} />
-              <meshStandardMaterial color="#fed7aa" roughness={0.4} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* === C. REAR COLLAR & HEEL SYSTEM === */}
-        {/* 9. Reinforced Heel Counter Wrap */}
-        <mesh position={[0, 0.062, -shoeL * 0.32]} castShadow receiveShadow>
-          <boxGeometry args={[shoeW * 0.88, 0.052, shoeL * 0.28]} />
-          <meshStandardMaterial color="#9a3412" roughness={0.45} />
-        </mesh>
-
-        {/* 10. Sculpted Padded Collar Rim */}
-        <mesh position={[0, 0.092, -shoeL * 0.25]} castShadow>
-          <boxGeometry args={[shoeW * 0.82, 0.032, shoeL * 0.28]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.6} />
-        </mesh>
-
-        {/* 11. Recessed Interior Sockliner Cavity */}
-        <mesh position={[0, 0.098, -shoeL * 0.22]}>
-          <boxGeometry args={[shoeW * 0.58, 0.022, shoeL * 0.22]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.9} />
-        </mesh>
-
-        {/* 12. Rear Heel Pull Loop */}
-        <mesh position={[0, 0.088, -shoeL * 0.455]}>
-          <boxGeometry args={[0.014, 0.034, 0.004]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.5} />
-        </mesh>
-
-        {/* === D. EYESTAY, EYELETS & CRISS-CROSS LACES === */}
-        {/* 13. Padded Tongue extending upward */}
-        <group position={[0, 0.086, 0.02]} rotation={[-0.32, 0, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[shoeW * 0.56, 0.018, shoeL * 0.34]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.7} />
-          </mesh>
-          {/* Tongue Branding Patch */}
-          <mesh position={[0, 0.01, -shoeL * 0.12]}>
-            <planeGeometry args={[shoeW * 0.42, 0.024]} />
-            <meshStandardMaterial color={color} roughness={0.4} />
-          </mesh>
-        </group>
-
-        {/* 14. Eyestay Panels along throat */}
-        {[-1, 1].map((side) => (
-          <group key={`eyestay-${side}`} position={[side * (shoeW * 0.28), 0.068, 0.04]} rotation={[-0.22, 0, 0]}>
-            <mesh>
-              <boxGeometry args={[0.012, 0.008, shoeL * 0.32]} />
-              <meshStandardMaterial color="#c2410c" roughness={0.5} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* 15. Metallic Eyelet Grommets (5 pairs) */}
-        {[-0.08, -0.04, 0, 0.04, 0.08].map((zOffset, idx) => (
-          <group key={`eyelets-${idx}`} position={[0, 0.076 + idx * 0.004, zOffset]}>
-            {/* Left Eyelet Ring */}
-            <mesh position={[-shoeW * 0.28, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.003, 0.003, 0.003, 12]} />
-              <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
-            </mesh>
-            {/* Right Eyelet Ring */}
-            <mesh position={[shoeW * 0.28, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.003, 0.003, 0.003, 12]} />
-              <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* 16. Detailed Criss-Cross Laces & Bow */}
-        {[-0.06, -0.02, 0.02, 0.06].map((zOffset, idx) => {
-          const yOffset = 0.078 + idx * 0.005;
-          const isEven = idx % 2 === 0;
-          return (
-            <group key={`cross-lace-${idx}`} position={[0, yOffset, zOffset]}>
-              {/* Criss-Cross Diagonal Lace Strand A */}
-              <mesh rotation={[0, isEven ? 0.42 : -0.42, 0]}>
-                <boxGeometry args={[shoeW * 0.52, 0.003, 0.005]} />
-                <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-              </mesh>
-              {/* Criss-Cross Diagonal Lace Strand B */}
-              <mesh rotation={[0, isEven ? -0.42 : 0.42, 0]}>
-                <boxGeometry args={[shoeW * 0.52, 0.003, 0.005]} />
-                <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-              </mesh>
-            </group>
-          );
-        })}
-
-        {/* 17. Tied Lace Knot & Bow loops at top */}
-        <group position={[0, 0.104, -0.04]} rotation={[-0.2, 0, 0]}>
-          <mesh>
-            <sphereGeometry args={[0.006, 12, 12]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.4} />
-          </mesh>
-          {/* Left Bow Loop */}
-          <mesh position={[-0.016, 0.002, 0]} rotation={[0, 0, 0.35]}>
-            <torusGeometry args={[0.012, 0.0025, 8, 16]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.4} />
-          </mesh>
-          {/* Right Bow Loop */}
-          <mesh position={[0.016, 0.002, 0]} rotation={[0, 0, -0.35]}>
-            <torusGeometry args={[0.012, 0.0025, 8, 16]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.4} />
-          </mesh>
-        </group>
-      </group>
+    // Uniform base scale factor to fit within catalog dimensions
+    const baseScale = Math.min(
+      targetW / (size.x || 1),
+      targetD / (size.z || 1),
+      targetH / (size.y || 1)
     );
-  };
 
-  return (
-    <group position={[0, 0, 0]}>
-      {renderSingleShoe(true)}
-      {renderSingleShoe(false)}
-    </group>
-  );
+    // Apply a focused ~6.5% visual scale reduction (within requested 5–8% range)
+    const scaleFactor = baseScale * 0.935;
+
+    // Center X and Z horizontally; adjust Y offset so soles rest naturally on the surface without floating or clipping
+    const scaledHeight = size.y * scaleFactor;
+    const yFloorAdjustment = -(targetH - scaledHeight) / 2;
+
+    clone.position.x = -center.x;
+    clone.position.y = -center.y + yFloorAdjustment / scaleFactor;
+    clone.position.z = -center.z;
+
+    const wrapper = new THREE.Group();
+    clone.scale.setScalar(scaleFactor);
+    wrapper.add(clone);
+
+    return wrapper;
+  }, [scene, dimensions]);
+
+  return <primitive object={modelGroup} />;
 }
+
+// Preload GLB for instant rendering
+useGLTF.preload('/sneaker.glb');
 
 /**
  * 2. HARDCOVER BOOK MODEL (W: 0.16m, D: 0.24m, H: 0.06m)
@@ -490,7 +358,7 @@ export default function PackingItem({ type, color, dimensions = [10, 10, 10], po
   const renderModel = () => {
     switch (type) {
       case 'sneakers':
-        return <SneakersModel color={color || '#ea580c'} />;
+        return <SneakersModel dimensions={dimensions} />;
       case 'hardcover_book':
         return <HardcoverBookModel color={color || '#8b5cf6'} />;
       case 'rolled_tshirt':

@@ -183,56 +183,58 @@ export default function Scene({ items = [] }) {
           {/* Interactive Suitcase (Internal 40 × 55 × 20 cm) */}
           <Suitcase />
 
-          {/* Render Items depending on active View Mode */}
-          {viewMode === 'showcase' ? (
-            /* Mode A: All 6 Canonical Models Showcase Preview */
-            <group>
-              {CANONICAL_SHOWCASE_LAYOUT.map((layout) => {
-                const catalogItem = catalogData.find((c) => c.type === layout.type);
-                if (!catalogItem) return null;
-                return (
-                  <PackingItem
-                    key={layout.type}
-                    type={catalogItem.type}
-                    color={catalogItem.color}
-                    dimensions={catalogItem.dimensions}
-                    position={layout.position}
-                    rotation={[0, 0, 0]}
-                  />
-                );
-              })}
-            </group>
-          ) : (
-            /* Mode B: User's Selected Items Staging Preview (Elevated to avoid wall clipping) */
-            <group>
-              {items.length > 0 && (
-                <>
-                  {/* Subtle Elevated Staging Guide Platform above suitcase cavity */}
-                  <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <planeGeometry args={[0.38, 0.52]} />
-                    <meshBasicMaterial
-                      color="#3b82f6"
-                      opacity={0.06}
-                      transparent
-                      wireframe
-                    />
-                  </mesh>
-
-                  {/* Render the currently paged items */}
-                  {visibleItems.map((item, idx) => (
+          {/* Render Items depending on active View Mode with Suspense for GLB loading */}
+          <React.Suspense fallback={null}>
+            {viewMode === 'showcase' ? (
+              /* Mode A: All 6 Canonical Models Showcase Preview */
+              <group>
+                {CANONICAL_SHOWCASE_LAYOUT.map((layout) => {
+                  const catalogItem = catalogData.find((c) => c.type === layout.type);
+                  if (!catalogItem) return null;
+                  return (
                     <PackingItem
-                      key={item.id}
-                      type={item.type}
-                      color={item.color}
-                      dimensions={item.dimensions}
-                      position={getStagingPosition(idx, item)}
+                      key={layout.type}
+                      type={catalogItem.type}
+                      color={catalogItem.color}
+                      dimensions={catalogItem.dimensions}
+                      position={layout.position}
                       rotation={[0, 0, 0]}
                     />
-                  ))}
-                </>
-              )}
-            </group>
-          )}
+                  );
+                })}
+              </group>
+            ) : (
+              /* Mode B: User's Selected Items Staging Preview (Elevated to avoid wall clipping) */
+              <group>
+                {items.length > 0 && (
+                  <>
+                    {/* Subtle Elevated Staging Guide Platform above suitcase cavity */}
+                    <mesh position={[0, 0.23, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                      <planeGeometry args={[0.38, 0.52]} />
+                      <meshBasicMaterial
+                        color="#3b82f6"
+                        opacity={0.06}
+                        transparent
+                        wireframe
+                      />
+                    </mesh>
+
+                    {/* Render the currently paged items */}
+                    {visibleItems.map((item, idx) => (
+                      <PackingItem
+                        key={item.id}
+                        type={item.type}
+                        color={item.color}
+                        dimensions={item.dimensions}
+                        position={getStagingPosition(idx, item)}
+                        rotation={[0, 0, 0]}
+                      />
+                    ))}
+                  </>
+                )}
+              </group>
+            )}
+          </React.Suspense>
 
           {/* Soft Ground Contact Shadow underneath suitcase */}
           <ContactShadows
