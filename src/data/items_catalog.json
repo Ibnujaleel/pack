@@ -1,0 +1,74 @@
+[
+  {
+    "type": "sneakers",
+    "name": "Sneakers",
+    "dimensions": [20, 28, 12],
+    "weight": 0.85,
+    "tier": 1,
+    "elasticity": 0,
+    "geometry": "rounded box",
+    "color": "#ea580c",
+    "animation": "heavy_thud",
+    "tags": ["footwear", "rigid"]
+  },
+  {
+    "type": "hardcover_book",
+    "name": "Hardcover Book",
+    "dimensions": [16, 24, 6],
+    "weight": 0.60,
+    "tier": 1,
+    "elasticity": 0,
+    "geometry": "box",
+    "color": "#8b5cf6",
+    "animation": "heavy_thud",
+    "tags": ["media", "rigid"]
+  },
+  {
+    "type": "rolled_tshirt",
+    "name": "Rolled T-shirt",
+    "dimensions": [18, 18, 10],
+    "weight": 0.20,
+    "tier": 2,
+    "elasticity": 0.6,
+    "geometry": "cylinder",
+    "color": "#22c55e",
+    "animation": "soft_settle",
+    "tags": ["clothing", "compressible"]
+  },
+  {
+    "type": "folded_denim",
+    "name": "Folded Denim",
+    "dimensions": [22, 30, 8],
+    "weight": 0.65,
+    "tier": 2,
+    "elasticity": 0.4,
+    "geometry": "box",
+    "color": "#3b82f6",
+    "animation": "soft_settle",
+    "tags": ["clothing", "compressible"]
+  },
+  {
+    "type": "laptop_15",
+    "name": "15-inch Laptop",
+    "dimensions": [35, 24, 2],
+    "weight": 1.80,
+    "tier": 3,
+    "elasticity": 0,
+    "geometry": "slab",
+    "color": "#475569",
+    "animation": "gentle_glide",
+    "tags": ["electronics", "fragile"]
+  },
+  {
+    "type": "tsa_liquid_pouch",
+    "name": "TSA Liquid Pouch",
+    "dimensions": [15, 10, 5],
+    "weight": 0.40,
+    "tier": 3,
+    "elasticity": 0,
+    "geometry": "box",
+    "color": "#f59e0b",
+    "animation": "gentle_glide",
+    "tags": ["liquid", "fragile"]
+  }
+]
