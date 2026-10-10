@@ -26,7 +26,7 @@ export default function FooterStatus({ items = [] }) {
       <div className="flex items-center space-x-2 text-slate-400 bg-[#12192b] border border-[#1e2840] px-3 py-1.5 rounded-xl self-start md:self-auto shrink-0">
         <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
         <span className="text-[11px] text-slate-300">
-          Phase 2: Canonical catalog & selection active.
+          Phase 3: Real 3D suitcase & 6 item models active.
         </span>
       </div>
     </footer>

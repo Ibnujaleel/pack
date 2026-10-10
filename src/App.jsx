@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
-import WorkspacePlaceholder from './components/WorkspacePlaceholder';
+import Scene from './scene/Scene';
 import PackControls from './components/PackControls';
 import PackingStatus from './components/PackingStatus';
 import SuitcaseDimensions from './components/SuitcaseDimensions';
@@ -61,8 +61,8 @@ export default function App() {
             onClearItems={handleClearItems}
           />
 
-          {/* Center Column: 3D Workspace Scaffolding */}
-          <WorkspacePlaceholder />
+          {/* Center Column: Interactive 3D Suitcase & Item Models Scene */}
+          <Scene items={items} />
 
           {/* Right Column: Controls, Packing Status, Suitcase Dimensions */}
           <div className="w-full lg:w-72 xl:w-80 shrink-0 flex flex-col gap-4">
