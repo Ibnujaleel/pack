@@ -1,21 +1,32 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Trash2, X } from 'lucide-react';
+import { Package, Plus, Search, Trash2, X, Camera } from 'lucide-react';
 import catalogData from '../data/items_catalog.json';
 import ItemIcon from './ItemIcon';
 
-export default function Sidebar({ items = [], onAddItem, onRemoveItem, onClearItems }) {
+const CANONICAL_SIX_TYPES = [
+  'sneakers',
+  'hardcover_book',
+  'rolled_tshirt',
+  'folded_denim',
+  'laptop_15',
+  'tsa_liquid_pouch',
+];
+
+export default function Sidebar({ items = [], onAddItem, onRemoveItem, onClearItems, onOpenScanner }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter catalog items by search query
-  const filteredCatalog = catalogData.filter((item) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      item.name.toLowerCase().includes(q) ||
-      item.type.toLowerCase().includes(q) ||
-      (item.tags && item.tags.some((t) => t.toLowerCase().includes(q)))
-    );
-  });
+  // Filter catalog items by search query and preserve 6 canonical items UI
+  const filteredCatalog = catalogData
+    .filter((item) => CANONICAL_SIX_TYPES.includes(item.type))
+    .filter((item) => {
+      const q = searchQuery.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.type.toLowerCase().includes(q) ||
+        (item.tags && item.tags.some((t) => t.toLowerCase().includes(q)))
+      );
+    });
 
   return (
     <aside className="w-full lg:w-80 xl:w-96 flex flex-col space-y-4 select-none">
@@ -118,6 +129,18 @@ export default function Sidebar({ items = [], onAddItem, onRemoveItem, onClearIt
           </div>
         )}
       </div>
+
+      {/* Scan Items Action Button */}
+      {onOpenScanner && (
+        <button
+          type="button"
+          onClick={onOpenScanner}
+          className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/20 via-indigo-600/25 to-blue-600/20 hover:from-blue-600/30 hover:to-indigo-600/35 border border-blue-500/40 hover:border-blue-500/60 text-blue-200 hover:text-white text-xs font-semibold shadow-lg shadow-blue-500/10 active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <Camera className="w-4 h-4 text-blue-400" />
+          <span>Scan Items from Photo</span>
+        </button>
+      )}
 
       {/* 2. Catalog Section */}
       <div className="bg-[#0e1322] border border-[#1b2337] rounded-2xl p-4 flex flex-col shadow-xl flex-1">

@@ -6,6 +6,7 @@ import PackControls from './components/PackControls';
 import PackingStatus from './components/PackingStatus';
 import SuitcaseDimensions from './components/SuitcaseDimensions';
 import FooterStatus from './components/FooterStatus';
+import ItemScannerModal from './components/ItemScannerModal';
 import { packItems } from './engine/index.js';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   const [packingError, setPackingError] = useState(null);
   const [animationTrigger, setAnimationTrigger] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const idCounterRef = useRef({});
 
   // Add an item instance with a guaranteed unique instance ID
@@ -103,6 +105,36 @@ export default function App() {
     setIsAnimating(false);
   };
 
+  // Batch-add scanned items from photo detector
+  const handleAddScannedItems = (itemsToAdd) => {
+    if (!itemsToAdd || itemsToAdd.length === 0) return;
+
+    const newInstances = itemsToAdd.map((catalogItem) => {
+      const currentCount = (idCounterRef.current[catalogItem.type] || 0) + 1;
+      idCounterRef.current[catalogItem.type] = currentCount;
+
+      return {
+        id: `${catalogItem.type}-${currentCount}`,
+        type: catalogItem.type,
+        name: catalogItem.name,
+        dimensions: [...catalogItem.dimensions],
+        weight: catalogItem.weight,
+        tier: catalogItem.tier,
+        elasticity: catalogItem.elasticity,
+        geometry: catalogItem.geometry,
+        color: catalogItem.color,
+        animation: catalogItem.animation,
+        tags: [...catalogItem.tags],
+        overrides: {},
+      };
+    });
+
+    setItems((prev) => [...prev, ...newInstances]);
+    setPackingResult(null);
+    setPackingError(null);
+    setIsAnimating(false);
+  };
+
   const isPacked = Boolean(packingResult && packingResult.status === 'success');
 
   return (
@@ -120,6 +152,7 @@ export default function App() {
             onAddItem={handleAddItem}
             onRemoveItem={handleRemoveItem}
             onClearItems={handleClearItems}
+            onOpenScanner={() => setIsScannerOpen(true)}
           />
 
           {/* Center Column: Interactive 3D Suitcase & Item Models Scene */}
@@ -159,6 +192,13 @@ export default function App() {
           packingError={packingError}
         />
       </main>
+
+      {/* Item Scanner Modal */}
+      <ItemScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onAddItems={handleAddScannedItems}
+      />
     </div>
   );
 }
