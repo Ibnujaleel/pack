@@ -481,4 +481,18 @@ Phase 9 introduces an advisory travel-policy engine and UI for evaluating passen
 - Visual Indicator: includes grounded dark tray mat with an amber border guide and a 3D "Doesn't Fit" badge indicator.
 - Dynamic Camera Framing: `getOptimalCameraFraming()` smoothly adjusts the orbit target and camera distance when overflow items appear, keeping both the suitcase and overflow area in full view without unnecessary zoom out when empty.
 
+---
+
+# Part H — The Visa Guy: Mock Visa Portal Integrated with Layover
+
+## H1. Purpose and Overview
+Connects a mobile-first visa client experience (inspired by `visaguy.ae`) with the existing Layover 3D packing assistant.
+
+## H2. Architecture & Screen Flow
+1. **Screen A (Login)**: Mobile-first card inspired by The Visa Guy and Hopper onboarding with brand avatar, demo credentials (`alfaz@visaguy.ae` / `layover2026`), password visibility toggle, and validation.
+2. **Screen B (Dashboard)**: Personalized travel dashboard for **Mr. Alfaz** with a verified demo visa-sanctioned badge, directional Dubai (DXB) ➔ London (LHR) flight card, live expert chat trigger, and verified UK & UAE travel regulations.
+3. **Screen C (Suitcase CTA)**: "Ready to pack for London?" interactive luggage preparation card with real-time suitcase item count badge and "Pack My Suitcase" action.
+4. **Screen D (Packing Integration)**: Direct navigation into the full Layover 3D packing studio with procedural/GLB items, item scanner, camera preview, sequential animations, beside-the-suitcase overflow area, and return navigation to the portal.
+
+
 

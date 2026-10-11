@@ -8,9 +8,17 @@ import SuitcaseDimensions from './components/SuitcaseDimensions';
 import FooterStatus from './components/FooterStatus';
 import ItemScannerModal from './components/ItemScannerModal';
 import TravelRestrictions from './components/TravelRestrictions';
+import VisaLoginScreen from './components/VisaLoginScreen';
+import VisaDashboard from './components/VisaDashboard';
+import { getStoredSession, mockLogout } from './data/mockAuth';
 import { packItems } from './engine/index.js';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => getStoredSession());
+  const [currentScreen, setCurrentScreen] = useState(() => {
+    return getStoredSession() ? 'dashboard' : 'login';
+  });
+
   const [items, setItems] = useState([]);
   const [packingResult, setPackingResult] = useState(null);
   const [packingError, setPackingError] = useState(null);
@@ -21,6 +29,17 @@ export default function App() {
   const [destinationCountry, setDestinationCountry] = useState('United Kingdom');
   const [destinationCity, setDestinationCity] = useState('London');
   const idCounterRef = useRef({});
+
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setCurrentScreen('dashboard');
+  };
+
+  const handleSignOut = () => {
+    mockLogout();
+    setCurrentUser(null);
+    setCurrentScreen('login');
+  };
 
   // Add an item instance with a guaranteed unique instance ID
   const handleAddItem = (catalogItem) => {
@@ -141,10 +160,33 @@ export default function App() {
 
   const isPacked = Boolean(packingResult && packingResult.status === 'success');
 
+  // Screen 1: Mobile-First Login
+  if (currentScreen === 'login') {
+    return <VisaLoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Screen 2 & 3: Personalized Visa-Sanctioned Dashboard & Suitcase Packing Section
+  if (currentScreen === 'dashboard') {
+    return (
+      <VisaDashboard
+        user={currentUser}
+        onOpenPackingStudio={() => setCurrentScreen('packing')}
+        onSignOut={handleSignOut}
+        packingItemCount={items.length}
+        isPacked={isPacked}
+      />
+    );
+  }
+
+  // Screen 4: Full Integrated 3D Packing Experience with Return Navigation
   return (
     <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Header */}
-      <Header />
+      {/* Top Header with Return Navigation to Visa Dashboard */}
+      <Header
+        onReturnToDashboard={() => setCurrentScreen('dashboard')}
+        onSignOut={handleSignOut}
+        user={currentUser}
+      />
 
       {/* Main Dashboard Layout Area */}
       <main className="flex-1 p-3 sm:p-4 lg:p-5 flex flex-col gap-4 max-w-[1800px] w-full mx-auto">
